@@ -1,0 +1,181 @@
+
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta content="IE=edge" http-equiv="X-UA-Compatible">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <title>COVID19-Guatemala</title>
+  <!-- CSS only -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+<link rel="stylesheet" href="css/custom_dash.css">
+
+<!-- JS, Popper.js, and jQuery -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+
+ </head>
+ <body>
+
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-12">
+        <h1>COVID-19 Guatemala</h1>
+      </div>
+    </div>
+
+    <div class="row text-center">
+      <div class="col-12">
+        <h3>Proyecciones</h3>
+      </div>
+    </div>
+
+    <div class="row">
+        <div class="col-6">
+            <img src="img/forecast_confirmed.png " class="img-fluid center-block forecast-img">
+        </div>
+        <div class="col-6">
+          <img src="img/forecast_deaths.png" class="img-fluid center-block forecast-img">
+        </div>
+
+    </div>
+
+
+    <div class="row">
+      <div class="col-6">
+        <h4>
+          Proyección para el
+          05/18/2020
+        </h4>
+        <p>
+          Casos positivos: entre
+          6,000 y 20,000
+        <br/>
+          Muertes: entre
+          120 y 260
+        </p>
+      </div>
+      <div class="col-6">
+        <p>
+          Este modelo se realiza tomando los datos reportados de las últimas 2 semanas y realizando
+          un modelo compartimentado. Las bandas de confianza se obtienen por medio de considerar los
+          intervalos de confianza de los parámetros al 95%.
+        </p>
+        <p>
+          Se valida el modelo por medio de calcular el error de interpolación usando el coeficiente
+          de determinación promedio.
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 text-center">
+        <h2>
+          Estado actual
+        </h2>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-6">
+        <h4>
+          Estadísticas para el
+          05/18/2020
+        </h4>
+        <p>
+          Casos positivos:
+          1,912 (+149)
+          <br/>
+          Recuperados:
+          138 (+0)
+          <br/>
+          Muertos:
+          35 (+2)
+          <br/><br/>
+          Letalidad: entre
+          2.43% y 2.68
+          %
+          <br/>
+          Período de duplicación: entre
+          8.60 días y 10.01
+          días
+          <br/>
+          Número de reproducción: entre
+          1.23 y 1.35
+        </p>
+      </div>
+      <div class="col-6">
+          <img src="img/current.png " class="img-fluid center-block forecast-img">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-6">
+          <img src="img/new.png " class="img-fluid center-block forecast-img">
+      </div>
+      <div class="col-6 vertical-middle-text">
+        <h4>Casos Nuevos</h4>
+        <p>
+          Para analizar de mejor manera el número de casos nuevos es importante considerar
+           los promedios móviles. De esta forma se minimiza el impacto de los errores presentes
+           en los datos y se pueden observar mejor las tendiencias presentes.
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-6 vertical-middle-text">
+        <h4>Letalidad</h4>
+        <p>
+          La letalidad se calcula como el porcentaje de infectados que mueren debido a la enfermedad.
+          Para esto se toma la distribución de pprcentajes durante los días de la epidemia y se
+          calculan los intervalos de confianza al 95%.
+        </p>
+      </div>
+      <div class="col-6">
+          <img src="img/mortality.png " class="img-fluid center-block forecast-img">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-6">
+          <img src="img/reproductive.png " class="img-fluid center-block forecast-img">
+      </div>
+      <div class="col-6 vertical-middle-text">
+        <h4>Número de Reproducción</h4>
+        <p>
+          Este número mide la cantidad promedio de contagios secundarios ocacionadas por
+          un infectado en un intervalo de tiempo. Este se calcula utilizando los datos y obteniendo
+          los intervalos de confianza al 95%.
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-6 vertical-middle-text">
+        <h4>Período de Duplicación</h4>
+        <p>
+          Entre 8.60 días y 10.01
+           días
+        </p>
+        <p>
+          Este parámetro estima en cuando tiempo se espera que el número de casos se duplique.
+          Actualmente el modelo exponencial presenta un coeficiente de determinación de
+          $$R^2=
+          0.986\,,$$por lo que el brote presenta un crecimiento <strong>exponencial</strong>.
+        </p>
+      </div>
+      <div class="col-6">
+          <img src="img/doubling.png " class="img-fluid center-block forecast-img">
+      </div>
+    </div>
+
+
+  </div>
+ </body>
+</html>
