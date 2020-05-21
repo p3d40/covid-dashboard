@@ -9,9 +9,11 @@ import math
 from scipy.stats import gamma
 import datetime
 import matplotlib.dates as mdates
+from statistics import mean
 
 
 RESULTS_DIR='results/'
+VALIDATION_DIR='validation/'
 HTML_DIR='html/'
 IMG_DIR='html/img/'
 
@@ -31,38 +33,39 @@ def mean_confidence_interval(data, confidence=0.95):
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
     return m, m-h, m+h
 
-def deriv(y, t, Rp, l, N,mu, gamma, a, beta):
+def deriv(y, t, Rp, l, N,mu, gammap, a, beta):
     S, E, I, R, D = y
     dSdt = - beta * S * E / N
     dEdt = beta*S * E / N - a*E
-    dIdt = a*E - gamma*I
-    dRdt = gamma*(1-mu) * I
-    dDdt = gamma*mu*I
+    dIdt = a*E - gammap*I
+    dRdt = gammap*(1-mu) * I
+    dDdt = gammap*mu*I
     return dSdt, dEdt, dIdt, dRdt, dDdt
 
-def seird(Rp,m,k,T,l):
-    t = np.linspace(0, T, T)
+def seird(Rp,m,k,Tt,l):
+    t = np.linspace(0, Tt-1, Tt)
     N=M
-    gamma=1/rec
+    gammap=1/rec
     a=1/l
     beta=Rp*a
-    I0=confirmedTs.iloc[k]-recoveredTs.iloc[k]-deathsTs.iloc[k]
+    I0=confirmedTs[k]-recoveredTs[k]-deathsTs[k]
     E0=beta*I0
-    R0=recoveredTs.iloc[k]
-    D0=deathsTs.iloc[k]
+    R0=recoveredTs[k]
+    D0=deathsTs[k]
     S0=N-E0-I0-R0-D0
     y0 = S0, E0, I0, R0, D0
-    ret = odeint(deriv, y0, t, args=(Rp,l,N,m, gamma, a, beta))
+    ret = odeint(deriv, y0, t, args=(Rp,l,N,m, gammap, a, beta))
     S, E, I, R, D = ret.T
     return S,E,I,R,D
 
 def rep(k,b):
+    k=k+len(confirmedTs0)-len(confirmedTs)
     mu=inc
     s=(incMax-incMin)/4
     a=(mu**2)/(s**2)
     th=(s**2)/mu
-    n=[gamma.pdf(x=k, a=a, scale = th) for k in range(1,b+1)]
-    rTs=[1 / sum( [n[i]*confirmedTs[j-i-1]/confirmedTs[j] for i in range(b) ]) for j in range(k-2*math.floor(incMax),k+1)]
+    n=[gamma.pdf(x=k, a=a, scale = th) for k in range(b+1)]
+    rTs=[1 / sum( [n[i+1]*confirmedTs0[j-i-1]/confirmedTs0[j] for i in range(b) ]) for j in range(k-14,k+1)]
     rp,rpmin,rpmax = mean_confidence_interval(rTs)
     return rp,rpmin,rpmax
 
@@ -92,7 +95,7 @@ def doubling(k,b):
     ax6.set_xlabel('Fecha')
     ax6.set_ylabel('Casos')
     date_time = current_date.strftime("%m/%d/%Y")
-    strTitle='COVID19 (Guatemala)\nEscala Logarítmica'
+    strTitle='Casos COVID19 (Guatemala)\nEscala Logarítmica'
     ax6.set_title(strTitle)
     ax6.yaxis.set_tick_params(length=0)
     ax6.xaxis.set_tick_params(length=0)
@@ -168,12 +171,84 @@ def forecast(k,b,T):
     plt.close()
     return cts[-1], ctsMin[-1], ctsMax[-1], dts[-1], dtsMin[-1],dtsMax[-1]
 
+def rsquared(y,f):
+    ym=mean(y)
+    sst=sum([(y[i]-ym)**2 for i in range(len(y))])
+    ssr=sum([(y[i]-f[i])**2 for i in range(len(y))])
+    rsq=1-ssr/sst
+    return rsq
 
+def validation(k,b):
+    T=len(confirmedTs)-k
+    S,E,I,R,D=seird( rep(k,b)[0], mort(k)[0], k, T, inc)
+    SMin,EMin,IMin,RMin,DMin=seird( rep(k,b)[1], mort(k)[1], k, T, incMax)
+    SMax,EMax,IMax,RMax,DMax=seird( rep(k,b)[2], mort(k)[2], k, T, incMin)
+    cts=I+R+D
+    ctsMin=IMin+RMin+DMin
+    ctsMax=IMax+RMax+DMax
+    dts=D
+    dtsMin=DMin
+    dtsMax=DMax
+    ctsrs=rsquared(confirmedTs[k:now+1],cts)
+    dtsrs=rsquared(deathsTs[k:now+1],dts)
+    base = confirmedTs.index[k]
+    date_list = [base + datetime.timedelta(days=x) for x in range(T)]
+    fig1 = plt.figure(facecolor='w')
+    ax1 = fig1.add_subplot(111, axisbelow=True)
+    locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+    formatter = mdates.ConciseDateFormatter(locator)
+    ax1.xaxis.set_major_locator(locator)
+    ax1.xaxis.set_major_formatter(formatter)
+    ax1.plot(confirmedTs, 'b', alpha=0.5, lw=2, label='Casos', marker="o",linestyle="")
+    ax1.plot(date_list, cts, '--' ,color='g', alpha=0.5, lw=2, label='Interpolación')
+    ax1.fill_between(date_list, ctsMin, ctsMax, alpha=0.2, color='g')
+    ax1.set_xlabel('Fecha')
+    ax1.set_ylabel('Casos')
+    date_time = base.strftime("%m/%d/%Y")
+    strTitle='Validación de Casos desde '+date_time+'\nCOVID19 (Guatemala) R^2='+'{:.2f}'.format(ctsrs)
+    ax1.set_title(strTitle)
+    ax1.yaxis.set_tick_params(length=0)
+    ax1.xaxis.set_tick_params(length=0)
+    ax1.grid(b=True, which='major', c='0.75', alpha=0.2, lw=2, ls='-')
+    legend1 = ax1.legend()
+    legend1.get_frame().set_alpha(0.5)
+    for spine in ('top', 'right', 'bottom', 'left'):
+        ax1.spines[spine].set_visible(False)
+    filename='validation_cases_'+'{0:03d}'.format(k)+'.png'
+    plt.savefig(VALIDATION_DIR+filename)
+    plt.savefig(IMG_DIR+filename)
+    plt.close()
+    fig2 = plt.figure(facecolor='w')
+    ax2 = fig2.add_subplot(111, axisbelow=True)
+    ax2.xaxis.set_major_locator(locator)
+    ax2.xaxis.set_major_formatter(formatter)
+    ax2.plot(deathsTs, 'r', alpha=0.5, lw=2, label='Muertes', marker="o",linestyle="")
+    ax2.plot(date_list, dts, '--' ,color='y', alpha=0.5, lw=2, label='Interpolación')
+    ax2.fill_between(date_list, dtsMin, dtsMax, alpha=0.2, color='y')
+    ax2.set_xlabel('Fecha')
+    ax2.set_ylabel('Muertos')
+    strTitle='Validación de Muertes desde '+date_time+'\nCOVID19 (Guatemala) R^2='+'{:.2f}'.format(dtsrs)
+    ax2.set_title(strTitle)
+    ax2.yaxis.set_tick_params(length=0)
+    ax2.xaxis.set_tick_params(length=0)
+    ax2.grid(b=True, which='major', c='0.75', alpha=0.2, lw=2, ls='-')
+    legend2 = ax2.legend()
+    legend2.get_frame().set_alpha(0.5)
+    for spine in ('top', 'right', 'bottom', 'left'):
+        ax2.spines[spine].set_visible(False)
+    filename='validation_deaths_'+'{0:03d}'.format(k)+'.png'
+    plt.savefig(VALIDATION_DIR+filename)
+    plt.savefig(IMG_DIR+filename)
+    plt.close()
+    return ctsrs, dtsrs
+
+
+print("Inicialndo processo...")
 url_confirmed="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 url_recovered="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv"
 url_deaths="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 
-
+print("Obteniendo datos...")
 s=requests.get(url_confirmed).content
 c=pd.read_csv(io.StringIO(s.decode('utf-8')))
 c=c.loc[c['Country/Region']=='Guatemala']
@@ -208,6 +283,7 @@ deathsTs=deathsTs0.loc[initial_date:]
 now=len(confirmedTs)-1
 
 #new
+print("Casos nuevos...")
 nconfirmedTs=confirmedTs.diff()
 nrecoveredTs=recoveredTs.diff()
 ndeathsTs=deathsTs.diff()
@@ -238,9 +314,13 @@ plt.savefig(IMG_DIR+filename)
 plt.close()
 
 #forecast
+print("Propyecciones...")
 cts, ctsMin, ctsMax, dts, dtsMin,dtsMax = forecast(now,10,30)
+future_time=confirmedTs.index[now]+datetime.timedelta(days=30)
+future_date=future_time.strftime("%m/%d/%Y")
 
 #current
+print("Estado actual...")
 fig = plt.figure(facecolor='w')
 ax = fig.add_subplot(111, axisbelow=True)
 locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
@@ -268,6 +348,7 @@ plt.savefig(IMG_DIR+filename)
 plt.close()
 
 #mortality
+print("Letalidad...")
 base = confirmedTs.index[0]
 date_list = [base + datetime.timedelta(days=x) for x in range(1,now+1)]
 mTs=[100*mort(i+1)[0] for i in range(1,now+1)]
@@ -297,6 +378,7 @@ plt.savefig(IMG_DIR+filename)
 plt.close()
 
 #reproductive
+print("Número de reproducción...")
 be=10
 offset=max(be,2*math.floor(incMax))
 base = confirmedTs.index[0]
@@ -315,7 +397,7 @@ ax4.fill_between(date_list, repTsMin, repTsMax, alpha=0.2, color='b')
 ax4.set_xlabel('Fecha')
 ax4.set_ylabel('Número de Reproducción')
 date_time = current_date.strftime("%m/%d/%Y")
-strTitle='Número de Reproducción al '+date_time+'\nCOVID19 Guatemala'
+strTitle='Número de Reproducción al '+date_time+'\nCOVID19 (Guatemala)'
 ax4.set_title(strTitle)
 ax4.yaxis.set_tick_params(length=0)
 ax4.xaxis.set_tick_params(length=0)
@@ -328,10 +410,19 @@ plt.savefig(IMG_DIR+filename)
 plt.close()
 
 #doubling
+print("Período de duplicación...")
 dt,dtmin,dtmax, rsq=doubling(now,14)
 
+#validation
+print("Validando modelo...")
+rsqTs=[validation(k,14) for k in range(2,now-2)]
+#rscts=mean(list(zip(*rsqTs))[0])
+#rsdts=mean(list(zip(*rsqTs))[1])
+rscts=mean_confidence_interval(list(zip(*rsqTs))[0])
+rsdts=mean_confidence_interval(list(zip(*rsqTs))[1])
 
 #HTML
+print("Generando HTML Dashboard...")
 html="""
 <!doctype html>
 <html lang="en">
@@ -370,10 +461,10 @@ html="""
     </div>
 
     <div class="row">
-        <div class="col-6">
+        <div class="col-sm-6">
             <img src="img/forecast_confirmed.png " class="img-fluid center-block forecast-img">
         </div>
-        <div class="col-6">
+        <div class="col-sm-6">
           <img src="img/forecast_deaths.png" class="img-fluid center-block forecast-img">
         </div>
 
@@ -381,35 +472,43 @@ html="""
 
 
     <div class="row">
-      <div class="col-6">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>
           Proyección para el
           """
-html+=date_time
+html+=future_date
 html+="""
         </h4>
         <p>
           Casos positivos: entre
           """
-html+=round10(ctsMin,0) +" y "+ round10(ctsMax,0)
+html+=round10(ctsMin,1) +" y "+ round10(ctsMax,1)+" (est. "+round10(cts,1)+ ")"
 html+="""
         <br/>
           Muertes: entre
           """
-html+= round10(dtsMin,1) +" y "+ round10(dtsMax,1)
+html+= round10(dtsMin,1) +" y "+ round10(dtsMax,1)+" (est. "+round10(dts,1)+ ")"
 html+="""
         </p>
-      </div>
-      <div class="col-6">
         <p>
-          Este modelo se realiza tomando los datos reportados de las últimas 2 semanas y realizando
-          un modelo compartimentado. Las bandas de confianza se obtienen por medio de considerar los
+          Las bandas de confianza del modelo se obtienen por medio de considerar los
           intervalos de confianza de los parámetros al 95%.
         </p>
+        <p><a href="model.html">Detalles del modelo...</a></p>
+      </div>
+      <div class="col-sm-6">
         <p>
-          Se valida el modelo por medio de calcular el error de interpolación usando el coeficiente
-          de determinación promedio.
-        </p>
+          El modelo se valida por medio del coeficiente de determinación de proyecciones pasadas.
+          Los intervalos de confianza para los valores de \(R^2\) para casos reportados y muertes
+           respectivamente son:</p>
+           <p class="text-center">
+           \(R^2_c\) entre """
+html+='{:0.3f}'.format(rscts[1])+" y "+'{:0.3f}'.format(rscts[2])+" (promedio "+'{:0.3f}'.format(rscts[0])+")"
+html+="""<br/>
+\(R^2_{m}\) entre """
+html+='{:0.3f}'.format(rsdts[1])+" y "+'{:0.3f}'.format(rsdts[2])+" (promedio "+'{:0.3f}'.format(rsdts[0])+")"
+html+="""</p>
+        <p><a href="validation.html">Detalles de validación...</a></p>
       </div>
     </div>
 
@@ -422,7 +521,7 @@ html+="""
     </div>
 
     <div class="row">
-      <div class="col-6">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>
           Estadísticas para el
           """
@@ -448,8 +547,7 @@ html+=""")
           Letalidad: entre
           """
 html+='{:.2f}'.format(mTsMin[-1])+"% y "+'{:.2f}'.format(mTsMax[-1])
-html+="""
-          %
+html+="""%
           <br/>
           Período de duplicación: entre
           """
@@ -463,16 +561,16 @@ html+='{:,.2f}'.format(repTsMin[-1]) +" y "+ '{:,.2f}'.format(repTsMax[-1])
 html+="""
         </p>
       </div>
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/current.png " class="img-fluid center-block forecast-img">
       </div>
     </div>
 
     <div class="row">
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/new.png " class="img-fluid center-block forecast-img">
       </div>
-      <div class="col-6 vertical-middle-text">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>Casos Nuevos</h4>
         <p>
           Para analizar de mejor manera el número de casos nuevos es importante considerar
@@ -483,7 +581,7 @@ html+="""
     </div>
 
     <div class="row">
-      <div class="col-6 vertical-middle-text">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>Letalidad</h4>
         <p>
           La letalidad se calcula como el porcentaje de infectados que mueren debido a la enfermedad.
@@ -491,16 +589,16 @@ html+="""
           calculan los intervalos de confianza al 95%.
         </p>
       </div>
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/mortality.png " class="img-fluid center-block forecast-img">
       </div>
     </div>
 
     <div class="row">
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/reproductive.png " class="img-fluid center-block forecast-img">
       </div>
-      <div class="col-6 vertical-middle-text">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>Número de Reproducción</h4>
         <p>
           Este número mide la cantidad promedio de contagios secundarios ocacionadas por
@@ -511,7 +609,7 @@ html+="""
     </div>
 
     <div class="row">
-      <div class="col-6 vertical-middle-text">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>Período de Duplicación</h4>
         <p>
           Entre """
@@ -534,7 +632,7 @@ html+=strex
 html+="""
         </p>
       </div>
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/doubling.png " class="img-fluid center-block forecast-img">
       </div>
     </div>
@@ -549,3 +647,67 @@ filename='dashboard.html'
 f = open(HTML_DIR+filename,'w')
 f.write(html)
 f.close()
+
+
+print("Generando HTML Validación...")
+html="""
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta content="IE=edge" http-equiv="X-UA-Compatible">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <title>COVID19 Validacion Guatemala</title>
+  <!-- CSS only -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+<link rel="stylesheet" href="css/custom_dash.css">
+
+<!-- JS, Popper.js, and jQuery -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+
+ </head>
+ <body>
+
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-12">
+        <h1>COVID-19 Guatemala</h1><br/>
+      </div>
+    </div>
+
+    <div class="row text-center">
+      <div class="col-12">
+        <h3>Validación</h3>
+      </div>
+    </div>"""
+for k in range(2,now-2):
+    html+="""<div class="row">
+        <div class="col-sm-6">
+            <img src="img/"""
+    html+='validation_cases_'+'{0:03d}'.format(k)+'.png'
+    html+="""" class="img-fluid center-block forecast-img">
+        </div>
+        <div class="col-sm-6">
+          <img src="img/"""
+    html+='validation_deaths_'+'{0:03d}'.format(k)+'.png'
+    html+="""" class="img-fluid center-block forecast-img">
+        </div>
+    </div>"""
+html+="""
+  </div>
+ </body>
+</html>
+"""
+
+filename='validation.html'
+f = open(HTML_DIR+filename,'w')
+f.write(html)
+f.close()
+
+print("Proceso completado.")

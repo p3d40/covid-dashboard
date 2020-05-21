@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta content="IE=edge" http-equiv="X-UA-Compatible">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <title>Proyecciones de casos positivos en Guatemala</title>
+  <meta content="Guatemala, COVID19, proyeccion, casos positivos" name="keywords">
+  <meta content="Estimaciones de casos positivos de COVID19 en Guatemala." name="description">
+  <!--[if lt IE 9]>
+<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <link href="css/anychart-ui.min.css" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link href="css/custom.css" rel="stylesheet" type="text/css">
+  <style>html, body, #container {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}</style>
+
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+ </head>
+ <body>
+   <div class="container">
+     <div class="row text-center">
+       <div class="col-12">
+         <h1 class="text-center">Proyecciones de casos positivos <br/>de COVID19 en Guatemala</h1>
+     </div>
+     </div>
+
+     <div class="row">
+       <div class="col-sm-6 text-center">
+         <img src="img/forecast_confirmed.png" class="img-fluid max-width: 100%;">
+       </div>
+       <div class="col-sm-6 text-center">
+         <img src="img/forecast_deaths.png" class="img-fluid max-width: 100%;">
+       </div>
+
+     </div>
+
+    <div class="row">
+      <div class="col">
+        <h4>¿Cómo se obtiene la proyección?</h4>
+        <h5>Descripción</h5>
+        <p>Se utiliza un modelo compartimentado aprendido con datos de los 10 días anteriores al inicio de la proyección.
+          Los parámetros y la ventana de tiempo se calculan minimizando errores de interpolación con base a los datos
+          reportados.
+        </p>
+        <h5>Modelo Compartimentado</h5>
+        <p> Estas proyeciones se basan en un modelo compartimentado ajustado con datos reales. En este modelo se asumen cinco
+          compartimentos:
+          <ul>
+            <li><strong>Susceptibles</strong>: Total de personas que pueden contraer la enfermedad.</li>
+            <li><strong>Expuestos</strong>: Personas que han estado en contacto con un infectado, desarrollarán síntomas, y serán
+            detectados por el sistema.</li>
+            <li><strong>Diagnosticados</strong>: Personas que están contagiadas, han realizado una prueba y han dado positivo.</li>
+            <li><strong>Recuperados</strong>: Personas que estuvieron contagiadas y se han recuperado de la enfermedad.</li>
+            <li><strong>Muertos</strong>: Personas que estuvieron contagiadas y han muerto debido a la enfermedad.</li>
+          </ul>
+          <figure>
+            <img src="img/compartimental.png" class="img-fluid rounded mx-auto d-block" alt="Modelo Compartimentado" style="width:35em">
+            <figcaption>Figura 1: Modelo Compartimentado</figcaption>
+          </figure>
+          Este modelo solamente considera los casos diagnosticados. Acá no se estima el subregistro inherente ni los efectos
+          número de pruebas diarias realizadas y procesadas, ni otros factores.
+        </p>
+        <p>Tomando como \(S(t), E(t),I(t),R(t),D(t)\) el número de susceptibles, expuestos, diagnosticados, recuperados y muertos
+          respectivamente, tenemos que el modelo compartimentado viene dado por el sistema de ecuaciones diferenciales,
+          $$
+          \begin{eqnarray}
+          S'(t)&=&-\beta\frac{E(t)}{N}S(t)\\
+          E'(t)&=&\beta \frac{E(t)}{N}S(t)-\lambda E(t)\\
+          I'(t)&=&\lambda E(t)-\gamma  (1-\mu ) I(t)-\gamma  \mu  I(t)\\
+          R'(t)&=&\gamma  (1-\mu ) I(t)\\
+          D'(t)&=&\gamma  \mu  I(t)
+          \end{eqnarray}
+          $$
+          dónde los parámetros del modelo son,
+          <ul>
+            <li><strong>\(\beta\)</strong>: Tasa de contagio del virus. Se calcula a través de los datos utilizando el valor del número reproductivo \(R_t\), obteniendo también intervalos de confianza.</li>
+            <li><strong>\(\lambda\)</strong>: Tasa de latencia del virus. Es igual a \(1/\text{tiempo de latencia}\). El tiempo de latencia es el tiempo en días
+            que una persona infectada contagia a otras personas. Dada la poca disponibilidad de datos, este parámetro es comunmente
+          estimado por el período de incubación, el cual es comprende el tiempo desde que un individuo se infecta hasta que presenta síntomas. Se obtiene
+        de artículos publicados al respecto con intervalos de confianza.</li>
+            <li><strong>\(\gamma\)</strong>: Tasa de recuperación. Es igual a \(1/\text{tiempo de recuperación}\). Se obtiene
+          de artículos publicados al respecto con intervalos de confianza.</li>
+            <li><strong>\(\mu\)</strong>: Tasa de mortalidad. Se calcula a través de los datos obteniendo también intervalos de confianza.</li>
+            <li><strong>\(N\)</strong>: Número total de individuos. Se utilizan datos del censo y estimaciones actuales.</li>
+          </ul>
+        </p>
+        <p>
+          Este modelo considera que la cantidad total de individuos es constante, es decir,
+          $$S'(t)+E'(t)+I'(t)+R'(t)+D'(t)=0\,.$$
+          También se considera que el brote se propaga debido a los individuos expuestos y no a los diagnosticados, ya que se asume que
+          los diagnosticados han sido puestos en cuarentena u hospitalización y por ende ya no pueden seguir contagiando. También se
+          asume que los recuperados desarrollan una inmunidad y que no van a contagiarse de nuevo (al menos durante un perído que no afecta al brote).
+        </p>
+        <h5>Número de reproducción</h5>
+        <p>Se toma el número de reproducción efectivo como el promedio de contagios secundarios en una ventana de tiempo. Este número
+          efectivo captura medidas de contención y sanitarias, por lo que cambia en el tiempo.
+        </p>
+        <p>Para calucular este, se recurren a dos métodos: 1) la matriz de generación y 2) la ecuación de Lotka–Euler.
+        </p>
+        <h6>Matriz de generación</h6>
+        <p>
+          Esta describe el flujo de infectados entre compartimentos cerca del punto de equilibrio libre de infecciones. Para esto, se consideran
+          solamente los compartimentos que contienen individuos infectados. En este caso, se tiene que flujo de infectados
+          puede ser expresado como,
+          $$\frac{X(t)}{d(t)}=\mathcal{F}(t)-\mathcal{V(t)}\,,$$
+          donde \(X(t)=(E(t), I(t)\) es el vector de compartimentos con individuos infectados. El vector \(\mathcal{F}\) da la
+          tasa de entrada de nuevos infectados a cada compartimiento infeccioso y el vector \(\mathcal{V}\) da la tasa de
+          transición entre los compartimientos infecciosos.
+        </P>
+        <p>
+          Con esto se consideran los Jacobianos de \(\mathcal{F},\mathcal{V}\),
+          $$F=D(\mathcal{F})\,,\qquad V=D(\mathcal{V})\,.$$
+          La matriz de generación está dada por
+          $$FV^{-1}\,.$$
+          Esta matriz da el número esperado de nuevos infectados. Se tiene que el radio espectral, es decir, el valor propio más
+          grande, da el valor del número de reproducción efectivo,
+          $$R=\rho(FV^{-1})\,.$$
+          En este caso se tiene que en el equilibrio sin infecciones, \(S=N\) y por lo tanto,
+          $$
+          \begin{eqnarray}
+          \mathcal{F}&=&\left(\beta E,0 \right)\\
+          \mathcal{V}&=&\left(\lambda E,-\lambda E+\gamma I \right)\\
+          \end{eqnarray}
+          $$
+          lo que da
+          $$
+          F=\begin{pmatrix}
+          \beta & 0\\
+          0&0
+          \end{pmatrix}\,,\qquad
+          V=\begin{pmatrix}
+          \lambda & 0\\
+          -\lambda &\gamma
+          \end{pmatrix}
+          $$
+          por lo que
+          $$
+          FV^{-1}=\begin{pmatrix}
+          \frac{\beta}{\lambda} & 0\\
+          0&0
+          \end{pmatrix}\,,
+          $$
+          y
+          $$R=\rho(FV^{-1})=\frac{\beta}{\lambda}\,.$$
+        </p>
+        <h6>Ecuación de Lotka–Euler</h6>
+        <p>
+          El intervalo generacional es el tiempo entre una infección primaria y una secundaria. Estos tiempos varían
+          ente individuos y generar una distribución de tiempos \(g(\tau)\). Con esta es posible obtener el número de
+          reproducción como,
+          $$R=\left(\int g(\tau)\frac{i(t-\tau)}{i(t)}\,d\tau\right)^{-1}\,.$$
+        </p>
+        <p>
+          En la práctica es complicado conocer la distribución de los intervalos generacionales, ya que no se conoce exactamente
+          cuándo fue infectado cada individuo y cuándo y a cuántos individuos secundarios infectó. Generalmente esta distribución
+          se aproxima con la disteibución del tiempo de incubación. Es decir, el tiempo en que tarda un individuo en presentar
+          síntomas luego de haber sido infectado.
+        </p>
+        <h4>¿Cómo se obtienen los parámetros?</h4>
+        <h5>Latencia \((\lambda)\)</h5>
+        <p>
+          Se estima utilizando datos de intervalos de incubación. Existen varios artículos científicos publicados a este respecto.
+          En este modelo se considera el valor mediano de \(\lambda=5.1\) días con un intervalo de confianza de \((4.5,5.8)\)
+          días con una confianza del 95%.
+        </p>
+        <h5>Mortalidad \((\mu)\)</h5>
+        <p>
+          Utilizando los datos reportados, se obteinen las razones diarias entre muertes y diagnosticados positivos. Con estos
+          Con estos datos se obteinen el valor medio y el intervalo de confianza al 95%.
+        </p>
+        <h5>Tasa de reproducción \((\beta)\)</h5>
+        <p>
+          Utilizando la ecuación de Lokta-Euler se calcula el número reproductivo efectivo diario con base a los 10
+          días previos. La ventana de tiempo se fija minimizando el error de interpolación entre el modelo y los datos.
+          Luego se calcula este valor para cada día durante las dos semanas previas para obtener una distribución de valores.
+          Con esto se calcula el valor medio y el intervalo de confianza al 95% para los valores de \(R\).
+        </p>
+        <p>
+          Utilizando la matriz de generación, se calcula \(\beta\) en términos de \(R\).
+        </p>
+        <h4>Manejo de errores</h4>
+        <h5>Bandas de Confianza</h5>
+        <p>
+          Para determinar bandas de confianza se utilizan los extremos de los intervalos de confianza para los parámetros obtenidos. Con estos
+          se resuelve el sistema de ecuaciones diferenciales obteniendo las curvas de máximos y mínimos.
+        </p>
+        <h5>Validación</h5>
+        <p>
+          El modelo se valida realizando interpolación para los datos existentes. Para esto, se realiza una segmentación de datos
+          en dos: 1) el conjunto de datos para entrenar el modelo y obtener los parámetros y 2) el conjunto de datos para validar
+          el modelo. Esta validación se realiza para cada día, tomando los 10 días anteriores para entrenar el modelo y los días
+          siguientes hasta la fecha, para validar el modelo.
+        </p>
+        <p>
+          La validación y aprendizaje se realizan con una función de verosimilitud logarítimica. Está viene dada por
+          $$L_j=E\left(\log\left(\frac{f^j_i}{y_i}\right)^2\right)\,,$$
+          y
+          $$L=E(L_j)\,,$$
+          dónde \(\{f^j_i\}\) es la estimación dada para el día \(i\) por el modelo centrado en el día \(j\), \(\{y_i\}\)
+          es el valor de los datos reales para el día \(i\) y \(E(\cdot)\) es el valor promedio.
+        </p>
+        <p>
+          Es posible evaluar el rendimiento general del modelo por medio de calcular el coeficiente de determinación
+          promedio,
+          $$R_j^2=1-\frac{\sum^j_i (y_i-f^j_i)^2}{\sum^j_i (y_i-E(y))^2}$$
+          y
+          $$R^2=E(R^2_j)=0.986949\,.$$
+        </p>
+        <h4>Referencias</h4>
+        <ul>
+          <li><a href="https://www.acc.org/latest-in-cardiology/journal-scans/2020/05/11/15/18/the-incubation-period-of-coronavirus-disease">https://www.acc.org/latest-in-cardiology/journal-scans/2020/05/11/15/18/the-incubation-period-of-coronavirus-disease</a></li>
+          <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7081172/pdf/aim-olf-M200504.pdf">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7081172/pdf/aim-olf-M200504.pdf</a></li>
+          <li><a href="https://www.who.int/bulletin/online_first/20-255695.pdf">https://www.who.int/bulletin/online_first/20-255695.pdf</a></li>
+          <li><a href="https://www.who.int/docs/default-source/coronaviruse/who-china-joint-mission-on-covid-19-final-report.pdf">https://www.who.int/docs/default-source/coronaviruse/who-china-joint-mission-on-covid-19-final-report.pdf</a></li>
+          <li><a href="https://www.sciencedirect.com/science/article/pii/S1755436518300847">https://www.sciencedirect.com/science/article/pii/S1755436518300847</a></li>
+          <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6002118/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6002118/</a></li>
+          <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2871801/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2871801/</a></li>
+          <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1766383/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1766383/</a></li>
+          <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3582628/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3582628/</a></li>
+        </ul>
+      </div>
+    </div>
+
+
+
+
+  </div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+ </body>
+</html>

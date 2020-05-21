@@ -36,10 +36,10 @@
     </div>
 
     <div class="row">
-        <div class="col-6">
+        <div class="col-sm-6">
             <img src="img/forecast_confirmed.png " class="img-fluid center-block forecast-img">
         </div>
-        <div class="col-6">
+        <div class="col-sm-6">
           <img src="img/forecast_deaths.png" class="img-fluid center-block forecast-img">
         </div>
 
@@ -47,29 +47,33 @@
 
 
     <div class="row">
-      <div class="col-6">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>
           Proyección para el
-          05/18/2020
+          06/18/2020
         </h4>
         <p>
           Casos positivos: entre
-          6,000 y 20,000
+          5,500 y 16,000 (est. 8,200)
         <br/>
           Muertes: entre
-          120 y 260
+          130 y 250 (est. 160)
         </p>
-      </div>
-      <div class="col-6">
         <p>
-          Este modelo se realiza tomando los datos reportados de las últimas 2 semanas y realizando
-          un modelo compartimentado. Las bandas de confianza se obtienen por medio de considerar los
+          Las bandas de confianza del modelo se obtienen por medio de considerar los
           intervalos de confianza de los parámetros al 95%.
         </p>
+        <p><a href="model.html">Detalles del modelo...</a></p>
+      </div>
+      <div class="col-sm-6">
         <p>
-          Se valida el modelo por medio de calcular el error de interpolación usando el coeficiente
-          de determinación promedio.
-        </p>
+          El modelo se valida por medio del coeficiente de determinación de proyecciones pasadas.
+          Los intervalos de confianza para los valores de \(R^2\) para casos reportados y muertes
+           respectivamente son:</p>
+           <p class="text-center">
+           \(R^2_c\) entre 0.501 y 0.753 (promedio 0.627)<br/>
+\(R^2_{m}\) entre 0.782 y 0.859 (promedio 0.820)</p>
+        <p><a href="validation.html">Detalles de validación...</a></p>
       </div>
     </div>
 
@@ -82,43 +86,42 @@
     </div>
 
     <div class="row">
-      <div class="col-6">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>
           Estadísticas para el
-          05/18/2020
+          05/19/2020
         </h4>
         <p>
           Casos positivos:
-          1,912 (+149)
+          2,133 (+221)
           <br/>
           Recuperados:
-          138 (+0)
+          155 (+17)
           <br/>
           Muertos:
-          35 (+2)
+          43 (+8)
           <br/><br/>
           Letalidad: entre
-          2.43% y 2.68
-          %
+          2.42% y 2.66%
           <br/>
           Período de duplicación: entre
-          8.60 días y 10.01
+          8.53 días y 9.73
           días
           <br/>
           Número de reproducción: entre
-          1.23 y 1.35
+          1.19 y 1.31
         </p>
       </div>
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/current.png " class="img-fluid center-block forecast-img">
       </div>
     </div>
 
     <div class="row">
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/new.png " class="img-fluid center-block forecast-img">
       </div>
-      <div class="col-6 vertical-middle-text">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>Casos Nuevos</h4>
         <p>
           Para analizar de mejor manera el número de casos nuevos es importante considerar
@@ -129,7 +132,7 @@
     </div>
 
     <div class="row">
-      <div class="col-6 vertical-middle-text">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>Letalidad</h4>
         <p>
           La letalidad se calcula como el porcentaje de infectados que mueren debido a la enfermedad.
@@ -137,16 +140,16 @@
           calculan los intervalos de confianza al 95%.
         </p>
       </div>
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/mortality.png " class="img-fluid center-block forecast-img">
       </div>
     </div>
 
     <div class="row">
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/reproductive.png " class="img-fluid center-block forecast-img">
       </div>
-      <div class="col-6 vertical-middle-text">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>Número de Reproducción</h4>
         <p>
           Este número mide la cantidad promedio de contagios secundarios ocacionadas por
@@ -157,20 +160,20 @@
     </div>
 
     <div class="row">
-      <div class="col-6 vertical-middle-text">
+      <div class="col-sm-6 vertical-middle-text">
         <h4>Período de Duplicación</h4>
         <p>
-          Entre 8.60 días y 10.01
+          Entre 8.53 días y 9.73
            días
         </p>
         <p>
           Este parámetro estima en cuando tiempo se espera que el número de casos se duplique.
           Actualmente el modelo exponencial presenta un coeficiente de determinación de
           $$R^2=
-          0.986\,,$$por lo que el brote presenta un crecimiento <strong>exponencial</strong>.
+          0.989\,,$$por lo que el brote presenta un crecimiento <strong>exponencial</strong>.
         </p>
       </div>
-      <div class="col-6">
+      <div class="col-sm-6">
           <img src="img/doubling.png " class="img-fluid center-block forecast-img">
       </div>
     </div>
