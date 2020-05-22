@@ -12,6 +12,7 @@ import matplotlib.dates as mdates
 from statistics import mean
 
 
+
 RESULTS_DIR='results/'
 VALIDATION_DIR='validation/'
 HTML_DIR='html/'
@@ -94,7 +95,7 @@ def doubling(k,b):
     ax6.plot(confirmedTs,'-' ,color='r', alpha=0.5, lw=2)
     ax6.set_xlabel('Fecha')
     ax6.set_ylabel('Casos')
-    date_time = current_date.strftime("%m/%d/%Y")
+    date_time = current_date.strftime("%d/%m/%Y")
     strTitle='Casos COVID19 (Guatemala)\nEscala Logarítmica'
     ax6.set_title(strTitle)
     ax6.yaxis.set_tick_params(length=0)
@@ -132,7 +133,7 @@ def forecast(k,b,T):
     ax1.fill_between(date_list, ctsMin, ctsMax, alpha=0.2, color='r')
     ax1.set_xlabel('Fecha')
     ax1.set_ylabel('Casos')
-    date_time = current_date.strftime("%m/%d/%Y")
+    date_time = current_date.strftime("%d/%m/%Y")
     strTitle='Proyección de 30 días al '+date_time+'\n Casos COVID19 (Guatemala)'
     ax1.set_title(strTitle)
     ax1.yaxis.set_tick_params(length=0)
@@ -155,7 +156,7 @@ def forecast(k,b,T):
     ax2.fill_between(date_list, dtsMin, dtsMax, alpha=0.2, color='r')
     ax2.set_xlabel('Fecha')
     ax2.set_ylabel('Muertos')
-    date_time = current_date.strftime("%m/%d/%Y")
+    date_time = current_date.strftime("%d/%m/%Y")
     strTitle='Proyección de 30 días al '+date_time+'\n Muertes COVID19 (Guatemala)'
     ax2.set_title(strTitle)
     ax2.yaxis.set_tick_params(length=0)
@@ -191,6 +192,9 @@ def validation(k,b):
     dtsMax=DMax
     ctsrs=rsquared(confirmedTs[k:now+1],cts)
     dtsrs=rsquared(deathsTs[k:now+1],dts)
+    fcts=sum([1 if ((ctsMax[i]>=confirmedTs[k+i]) & (confirmedTs[k+i]>=ctsMin[i]))  else 0 for i in range(len(cts))])
+    fdts=sum([1 if ((dtsMax[i]>=deathsTs[k+i]) & (deathsTs[k+i]>=dtsMin[i]))  else 0 for i in range(len(dts))])
+    tts=len(cts)
     base = confirmedTs.index[k]
     date_list = [base + datetime.timedelta(days=x) for x in range(T)]
     fig1 = plt.figure(facecolor='w')
@@ -204,7 +208,7 @@ def validation(k,b):
     ax1.fill_between(date_list, ctsMin, ctsMax, alpha=0.2, color='g')
     ax1.set_xlabel('Fecha')
     ax1.set_ylabel('Casos')
-    date_time = base.strftime("%m/%d/%Y")
+    date_time = base.strftime("%d/%m/%Y")
     strTitle='Validación de Casos desde '+date_time+'\nCOVID19 (Guatemala) R^2='+'{:.2f}'.format(ctsrs)
     ax1.set_title(strTitle)
     ax1.yaxis.set_tick_params(length=0)
@@ -240,15 +244,16 @@ def validation(k,b):
     plt.savefig(VALIDATION_DIR+filename)
     plt.savefig(IMG_DIR+filename)
     plt.close()
-    return ctsrs, dtsrs
+    return ctsrs, dtsrs, fcts, fdts,tts
 
-
-print("Inicialndo processo...")
+now = datetime.datetime.now()
+print(now.strftime("%Y-%m-%d %H:%M:%S")+" Inicialndo processo...")
 url_confirmed="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 url_recovered="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv"
 url_deaths="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 
-print("Obteniendo datos...")
+now = datetime.datetime.now()
+print(now.strftime("%Y-%m-%d %H:%M:%S")+" Obteniendo datos...")
 s=requests.get(url_confirmed).content
 c=pd.read_csv(io.StringIO(s.decode('utf-8')))
 c=c.loc[c['Country/Region']=='Guatemala']
@@ -283,7 +288,8 @@ deathsTs=deathsTs0.loc[initial_date:]
 now=len(confirmedTs)-1
 
 #new
-print("Casos nuevos...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Casos nuevos...")
 nconfirmedTs=confirmedTs.diff()
 nrecoveredTs=recoveredTs.diff()
 ndeathsTs=deathsTs.diff()
@@ -298,7 +304,7 @@ ax5.plot(nmconfirmedTs, 'b', alpha=0.8, lw=2, label='Promedios Móviles')
 ax5.bar(nconfirmedTs.index, nconfirmedTs.values,color='r', alpha=0.2, lw=2, label='Casos Nuevos')
 ax5.set_xlabel('Fecha')
 ax5.set_ylabel('Casos Nuevos')
-date_time = current_date.strftime("%m/%d/%Y")
+date_time = current_date.strftime("%d/%m/%Y")
 strTitle='Casos Nuevos al '+date_time+'\n COVID19 (Guatemala)'
 ax5.set_title(strTitle)
 ax5.yaxis.set_tick_params(length=0)
@@ -314,13 +320,15 @@ plt.savefig(IMG_DIR+filename)
 plt.close()
 
 #forecast
-print("Propyecciones...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Proyecciones...")
 cts, ctsMin, ctsMax, dts, dtsMin,dtsMax = forecast(now,10,30)
 future_time=confirmedTs.index[now]+datetime.timedelta(days=30)
-future_date=future_time.strftime("%m/%d/%Y")
+future_date=future_time.strftime("%d/%m/%Y")
 
 #current
-print("Estado actual...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Estado actual...")
 fig = plt.figure(facecolor='w')
 ax = fig.add_subplot(111, axisbelow=True)
 locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
@@ -332,7 +340,7 @@ ax.plot(recoveredTs0, 'g', alpha=0.5, lw=2, label='Recuperados')
 ax.plot(deathsTs0, 'r', alpha=0.5, lw=2, label='Muertos')
 ax.set_xlabel('Fecha')
 ax.set_ylabel('Personas')
-date_time = current_date.strftime("%m/%d/%Y")
+date_time = current_date.strftime("%d/%m/%Y")
 strTitle='COVID19 (Guatemala) al '+date_time
 ax.set_title(strTitle)
 ax.yaxis.set_tick_params(length=0)
@@ -348,7 +356,8 @@ plt.savefig(IMG_DIR+filename)
 plt.close()
 
 #mortality
-print("Letalidad...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Letalidad...")
 base = confirmedTs.index[0]
 date_list = [base + datetime.timedelta(days=x) for x in range(1,now+1)]
 mTs=[100*mort(i+1)[0] for i in range(1,now+1)]
@@ -364,8 +373,8 @@ ax3.plot_date(date_list,mTs,'--' ,color='r', alpha=0.5, lw=2)
 ax3.fill_between(date_list, mTsMin, mTsMax, alpha=0.2, color='r')
 ax3.set_xlabel('Fecha')
 ax3.set_ylabel('Porcentaje')
-date_time = current_date.strftime("%m/%d/%Y")
-strTitle='Letalidad al'+date_time+'\nCOVID19 (Guatemala)'
+date_time = current_date.strftime("%d/%m/%Y")
+strTitle='Letalidad al '+date_time+'\nCOVID19 (Guatemala)'
 ax3.set_title(strTitle)
 ax3.yaxis.set_tick_params(length=0)
 ax3.xaxis.set_tick_params(length=0)
@@ -378,7 +387,8 @@ plt.savefig(IMG_DIR+filename)
 plt.close()
 
 #reproductive
-print("Número de reproducción...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Número de reproducción...")
 be=10
 offset=max(be,2*math.floor(incMax))
 base = confirmedTs.index[0]
@@ -396,7 +406,7 @@ ax4.plot_date(date_list,repTs,'--' ,color='b', alpha=0.5, lw=2)
 ax4.fill_between(date_list, repTsMin, repTsMax, alpha=0.2, color='b')
 ax4.set_xlabel('Fecha')
 ax4.set_ylabel('Número de Reproducción')
-date_time = current_date.strftime("%m/%d/%Y")
+date_time = current_date.strftime("%d/%m/%Y")
 strTitle='Número de Reproducción al '+date_time+'\nCOVID19 (Guatemala)'
 ax4.set_title(strTitle)
 ax4.yaxis.set_tick_params(length=0)
@@ -410,19 +420,24 @@ plt.savefig(IMG_DIR+filename)
 plt.close()
 
 #doubling
-print("Período de duplicación...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Período de duplicación...")
 dt,dtmin,dtmax, rsq=doubling(now,14)
 
 #validation
-print("Validando modelo...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Validando modelo...")
 rsqTs=[validation(k,14) for k in range(2,now-2)]
-#rscts=mean(list(zip(*rsqTs))[0])
-#rsdts=mean(list(zip(*rsqTs))[1])
 rscts=mean_confidence_interval(list(zip(*rsqTs))[0])
 rsdts=mean_confidence_interval(list(zip(*rsqTs))[1])
+fstts=sum(list(zip(*rsqTs))[4])
+fscts=sum(list(zip(*rsqTs))[2])/fstts
+fsdts=sum(list(zip(*rsqTs))[3])/fstts
+
 
 #HTML
-print("Generando HTML Dashboard...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Generando HTML Dashboard...")
 html="""
 <!doctype html>
 <html lang="en">
@@ -450,7 +465,7 @@ html="""
   <div class="container">
     <div class="row text-center">
       <div class="col-12">
-        <h1>COVID-19 Guatemala</h1>
+        <h1>COVID-19 Guatemala</h1><br/>
       </div>
     </div>
 
@@ -467,7 +482,6 @@ html="""
         <div class="col-sm-6">
           <img src="img/forecast_deaths.png" class="img-fluid center-block forecast-img">
         </div>
-
     </div>
 
 
@@ -498,25 +512,18 @@ html+="""
       </div>
       <div class="col-sm-6">
         <p>
-          El modelo se valida por medio del coeficiente de determinación de proyecciones pasadas.
-          Los intervalos de confianza para los valores de \(R^2\) para casos reportados y muertes
-           respectivamente son:</p>
-           <p class="text-center">
-           \(R^2_c\) entre """
-html+='{:0.3f}'.format(rscts[1])+" y "+'{:0.3f}'.format(rscts[2])+" (promedio "+'{:0.3f}'.format(rscts[0])+")"
-html+="""<br/>
-\(R^2_{m}\) entre """
-html+='{:0.3f}'.format(rsdts[1])+" y "+'{:0.3f}'.format(rsdts[2])+" (promedio "+'{:0.3f}'.format(rsdts[0])+")"
-html+="""</p>
+            La validación del modelo se obtiene realizando proyecciones pasadas y comparándolas con los datos reales. Para esto
+            se analizan las bandas de confianza y el coeficiente de determinación de las interpolaciones.
+        </p>
         <p><a href="validation.html">Detalles de validación...</a></p>
       </div>
     </div>
 
     <div class="row">
       <div class="col-12 text-center">
-        <h2>
+        <h3>
           Estado actual
-        </h2>
+        </h3>
       </div>
     </div>
 
@@ -546,12 +553,12 @@ html+=""")
           <br/><br/>
           Letalidad: entre
           """
-html+='{:.2f}'.format(mTsMin[-1])+"% y "+'{:.2f}'.format(mTsMax[-1])
+html+='{:.1f}'.format(mTsMin[-1])+"% y "+'{:.1f}'.format(mTsMax[-1])
 html+="""%
           <br/>
           Período de duplicación: entre
           """
-html+='{:,.2f}'.format(dtmin)+" días y "+'{:,.2f}'.format(dtmax)
+html+='{:,.1f}'.format(dtmin)+" días y "+'{:,.1f}'.format(dtmax)
 html+="""
           días
           <br/>
@@ -575,7 +582,7 @@ html+="""
         <p>
           Para analizar de mejor manera el número de casos nuevos es importante considerar
            los promedios móviles. De esta forma se minimiza el impacto de los errores presentes
-           en los datos y se pueden observar mejor las tendiencias presentes.
+           en los datos y se pueden observar mejor las tendiencias presentes. Acá se consideran los promedios móviles de 7 días.
         </p>
       </div>
     </div>
@@ -585,7 +592,7 @@ html+="""
         <h4>Letalidad</h4>
         <p>
           La letalidad se calcula como el porcentaje de infectados que mueren debido a la enfermedad.
-          Para esto se toma la distribución de pprcentajes durante los días de la epidemia y se
+          Para esto se toma la distribución de porcentajes durante los días de la epidemia y se
           calculan los intervalos de confianza al 95%.
         </p>
       </div>
@@ -601,9 +608,9 @@ html+="""
       <div class="col-sm-6 vertical-middle-text">
         <h4>Número de Reproducción</h4>
         <p>
-          Este número mide la cantidad promedio de contagios secundarios ocacionadas por
+          Este número mide la cantidad promedio de contagios secundarios ocacionados por
           un infectado en un intervalo de tiempo. Este se calcula utilizando los datos y obteniendo
-          los intervalos de confianza al 95%.
+          los intervalos de confianza al 95%. Acá se consideran intervalos de 14 días.
         </p>
       </div>
     </div>
@@ -613,18 +620,18 @@ html+="""
         <h4>Período de Duplicación</h4>
         <p>
           Entre """
-html+='{:,.2f}'.format(dtmin)+" días y "+'{:,.2f}'.format(dtmax)
+html+='{:,.1f}'.format(dtmin)+" días y "+'{:,.1f}'.format(dtmax)
 html+="""
            días
         </p>
         <p>
-          Este parámetro estima en cuando tiempo se espera que el número de casos se duplique.
-          Actualmente el modelo exponencial presenta un coeficiente de determinación de
+          Este parámetro estima en cuánto tiempo se espera que el número de casos se duplique.
+          Actualmente la regresión exponencial presenta un coeficiente de determinación de
           $$R^2=
           """
 html+='{:,.3f}'.format(rsq)
 html+="\,,$$"
-if (rsq>0.80):
+if (rsq>0.70):
     strex="por lo que el brote presenta un crecimiento <strong>exponencial</strong>."
 else:
     strex="por lo que el brote presenta un crecimiento <strong>sub-exponencial</strong>."
@@ -649,7 +656,8 @@ f.write(html)
 f.close()
 
 
-print("Generando HTML Validación...")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Generando HTML Validación...")
 html="""
 <!doctype html>
 <html lang="en">
@@ -669,8 +677,6 @@ html="""
 <script type="text/javascript" async
   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
 </script>
-
-
  </head>
  <body>
 
@@ -685,15 +691,43 @@ html="""
       <div class="col-12">
         <h3>Validación</h3>
       </div>
-    </div>"""
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6">
+        <p>
+            Para evaluar el modelo se realizan segmentaciones de los datos para entrenar y validar las proyecciones. Como parte de la
+            validación se calcula el porcentaje de datos validados que caen dentro de las bandas de confianza del modelo entrenado.
+        </p>
+        <p>
+            Al realizar esta validación se tiene que el """
+html+='{:.0f}'.format(100*fscts)+"% de los casos reportados y el "
+html+='{:.0f}'.format(100*fsdts)+"% de las muertes están dentro de las bandas de confianza de las proyecciones."
+html+="""</p>
+        </div>
+        <div class="col-sm-6">
+        <p>
+          Además, el modelo se valida por medio del coeficiente de determinación para cada segmentación para luego considerar
+          el promedio de estos. Los intervalos de confianza para los valores de \(R^2\) para casos reportados y muertes
+           respectivamente son:</p>
+           <p class="text-center">
+           \(R^2_c\) entre """
+html+='{:0.3f}'.format(rscts[1])+" y "+'{:0.3f}'.format(rscts[2])+" (promedio "+'{:0.3f}'.format(rscts[0])+")"
+html+="""<br/>
+\(R^2_{m}\) entre """
+html+='{:0.3f}'.format(rsdts[1])+" y "+'{:0.3f}'.format(rsdts[2])+" (promedio "+'{:0.3f}'.format(rsdts[0])+")"
+html+="""</p>
+        </div>
+    </div>
+    """
 for k in range(2,now-2):
     html+="""<div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-6 text-center">
             <img src="img/"""
     html+='validation_cases_'+'{0:03d}'.format(k)+'.png'
     html+="""" class="img-fluid center-block forecast-img">
         </div>
-        <div class="col-sm-6">
+        <div class="col-sm-6 text-center">
           <img src="img/"""
     html+='validation_deaths_'+'{0:03d}'.format(k)+'.png'
     html+="""" class="img-fluid center-block forecast-img">
@@ -710,4 +744,5 @@ f = open(HTML_DIR+filename,'w')
 f.write(html)
 f.close()
 
-print("Proceso completado.")
+nowdt = datetime.datetime.now()
+print(nowdt.strftime("%Y-%m-%d %H:%M:%S")+" Proceso completado.")
